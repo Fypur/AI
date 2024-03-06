@@ -10,7 +10,7 @@ namespace AI
     {
         public DeepQAgent2 Agent;
 
-        public int Step;
+        public uint Step;
         public int EpisodeStep;
         public int GraphRefreshRate;
         public int LossGraphClearRate;
@@ -33,7 +33,9 @@ namespace AI
 
         public void DoStep()
         {
-            Step++;
+            if(Agent.TrainingStarted)
+                Step++;
+
             EpisodeStep++;
 
             float[] state = GetState();
@@ -59,13 +61,13 @@ namespace AI
                 totalReward = 0;
             }
 
-            if (Step % GraphRefreshRate == 0)
+            if (Agent.TrainingStarted && Step % GraphRefreshRate == 0)
             {
                 Agent.ExportLossGraph();
                 ExportRewardGraph();
             }
 
-            if (Step % LossGraphClearRate == 0)
+            if (Agent.TrainingStarted && Step % LossGraphClearRate == 0)
                 Agent.ClearLossGraph();
         }
 
@@ -75,12 +77,10 @@ namespace AI
             Console.WriteLine("Reward Graph exported step: " + Step);
         }
 
-        protected abstract void Reset();
-
         protected abstract float UpdateAndReward(int action);
-
-        protected abstract float[] GetState();
         protected abstract bool Done();
+        protected abstract float[] GetState();
+        protected abstract void Reset();
         public virtual void Render() { }
     }
 }

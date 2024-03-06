@@ -13,6 +13,7 @@ namespace AI
         public float Gamma { get; private set; }
         public int TotalTimeSteps { get; private set; } //TODO: BETA DECAY TO 1 WITH TOTALTIMESTEPS
         public int TargetRefreshRate { get; private set; }
+        public bool TrainingStarted { get; private set; }
 
         public ScottPlot.Plot LossPlot;
         public ScottPlot.Plottables.DataLogger DataLogger;
@@ -20,13 +21,14 @@ namespace AI
         private int step;
         private float epsilonMin;
         private float epsilonDecay;
+        private bool saveMemory;
+        private string saveFile;
         private int actionSize => Network.Layers[Network.Layers.Length - 1];
 
-        private bool trainingStarted;
         
         public DeepQAgent2(int[] layers, int totalTimesteps = 100000, int targetRefreshRate = 1000, float learningRate = 0.001f, float movingAverageBeta = 0.9f,
-         int memorySize = 65536, float replayAlpha = 0.6f, float replayBeta = 0.4f, float replayBetaIncrease = 0.000001f, float replayEpsilon = 0.000001f, int batchSize = 64,
-         float epsilonMin = 0.03f, float epsilonDecay = 0.0001f, float gamma = 0.99f)
+         int memorySize = 65536, float replayAlpha = 0.6f, float replayBeta = 0.4f, float replayBetaIncrease = 0.000001f, float replayEpsilon = 0.000001f,
+         int batchSize = 64, float epsilonMin = 0.03f, float epsilonDecay = 0.0001f, float gamma = 0.99f, bool saveMemory = true, string saveFile = "./memory")
         {
             ReplayBuffer = new PrioritizedExperienceReplay2(memorySize, replayAlpha, replayBeta, replayBetaIncrease, replayEpsilon, batchSize);
             Network = new NN2(layers, learningRate, movingAverageBeta);
@@ -39,13 +41,16 @@ namespace AI
             this.epsilonMin = epsilonMin;
             this.epsilonDecay = epsilonDecay;
 
+            this.saveMemory = saveMemory;
+            this.saveFile = saveFile;
+
             LossPlot = new ScottPlot.Plot();
             DataLogger = LossPlot.Add.DataLogger();
         }
 
         public int Act(float[] state)
         {
-            if(!trainingStarted)
+            if(!TrainingStarted)
                 return Rand.NextInt(0, actionSize);
 
             Epsilon = epsilonMin + (1 - epsilonMin) * (float)Math.Exp(-epsilonDecay * step);
@@ -58,7 +63,7 @@ namespace AI
 
         public void Replay()
         {
-            if (!trainingStarted)
+            if (!TrainingStarted)
                 return;
 
             float totalError = 0;
@@ -110,8 +115,13 @@ namespace AI
         {
             ReplayBuffer.Add(experience);
 
-            if (ReplayBuffer.Filled)
-                trainingStarted = true;
+            if (ReplayBuffer.Filled && !TrainingStarted)
+            {
+                if (saveMemory)
+                    ReplayBuffer.Save(saveFile);
+
+                TrainingStarted = true;
+            }
         }
 
         public int ArgMax(float[] array)
@@ -167,7 +177,7 @@ namespace AI
             ReplayBuffer.Load(directoryPath + "memory");
             Drawing.DebugForever.Add("LOADED");
 
-            trainingStarted = true;
+            TrainingStarted = true;
             epsilonDecay = 100000;
         }
     }
