@@ -11,16 +11,14 @@ namespace AI
         public int Capacity; //leaf amount
         private float[] weights;
 
-        public MinTree(float[] data)
+        public MinTree(int capacity)
         {
-            Capacity = data.Length;
-            int nodeAmount = data.Length * 2 - 1;
+            Capacity = capacity;
+            int nodeAmount = Capacity * 2 - 1;
 
             weights = new float[nodeAmount];
             for(int i = 0; i < weights.Length; i++)
                 weights[i] = float.PositiveInfinity;
-            for (int i = 0; i < data.Length; i++)
-                ChangeWeight(i, data[i]);
         }
 
         public void ChangeWeight(int index, float newWeight)

@@ -46,7 +46,8 @@ public class DeepQAgent
 
     public string saveFile = System.IO.Directory.GetCurrentDirectory().Replace('\\', '/') + "/savedMem.json";
 
-    public DeepQAgent(int[] layers, bool saveNewMemory, bool learning, bool loadModel) //We don't do anything here because we let the constructor set the parameters (if they don't touch anything they're using default parameters)
+    public DeepQAgent(int[] layers, bool saveNewMemory, bool learning, bool loadModel)
+    //We don't do anything here because we let the constructor set the parameters (if they don't touch anything they're using default parameters)
     {
         this.layers = layers;
         actionSize = layers[layers.Length - 1];
