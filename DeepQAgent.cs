@@ -92,7 +92,7 @@ public class DeepQAgent
             return;
 
         //beta = Math.Min(beta + betaIncreasePerStep, betaMax);
-        Tuple<Experience, int>[] miniBatch = replayBuffer.Sample(BatchSize);
+        Tuple<Experience, int>[] miniBatch = replayBuffer.Sample(MemorySize);
         if(saveNewMemory)
         {
             saveNewMemory = false;
@@ -126,7 +126,7 @@ public class DeepQAgent
             loss[exp.Action] = target - outputCurrentState[exp.Action];
 
             float oldProbability = replayBuffer.GetPriority(index);
-            float weight = (float)Math.Pow(BatchSize * oldProbability / replayBuffer.ProbabilitySum(), -beta);
+            float weight = (float)Math.Pow(MemorySize * oldProbability / replayBuffer.ProbabilitySum(), -beta);
 
 
             weight /= maxWeight; //normalization
@@ -202,7 +202,8 @@ public class DeepQAgent
     public bool HasStartedTraining()
         => replayBuffer.Filled;
 
-    public void ExportLossGraph(){
+    public void ExportLossGraph()
+    {
         plot.SavePng(System.Environment.CurrentDirectory + "/plot.png", 1000, 1000);
         Console.WriteLine("Loss Graph exported step: " + step);
     }
