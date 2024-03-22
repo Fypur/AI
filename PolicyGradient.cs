@@ -19,33 +19,44 @@ namespace AI
         public void Train(PolicyGradientBatch batch)
         {
             float[] returns = new float[batch.Rewards.Length];
+            for(int i = 0; i < returns.Length; i++)
+                returns[i] = batch.Rewards[i];
 
             int episodeIndex = 0;
-            for(int i = 0; i < returns.Length; i++)
+            for(int i = 0; i < batch.EpisodeLengths.Length; i++)
             {
-                for(int j = episodeIndex; j < episodeIndex + batch.EpisodeLengths[i]; j++)
-                {
-                    float gammaPow = Gamma;
-                    for(int k = j + 1; k < episodeIndex + batch.EpisodeLengths[i]; k++)
-                    {
-                        returns[j] += gammaPow * returns[k];
-                        gammaPow *= Gamma;
-                    }
+                float sum = 0;
+                for(int j = episodeIndex + batch.EpisodeLengths[i] - 1; j >= episodeIndex; j--){
+                    float temp = sum;
+                    sum += returns[j];
+                    returns[j] += temp;
+                    sum *= Gamma;
                 }
 
                 episodeIndex += batch.EpisodeLengths[i];
             }
 
+            Console.WriteLine("Trained");
+
             LogitsNetwork.TrainLoss(batch.States,
-            (index, output) =>
+            (index, logits) =>
             {
                 float[] loss = new float[ActionSize];
+                float[] softmax = Softmax(logits);
 
-                for(int i = 0; i < loss.Length; i++)
-                    loss[i] = (float)Math.Log(Softmax(output)[batch.Actions[index]]) * returns[index];
-                
+                float logp = (float)Math.Log(softmax[batch.Actions[index]]);
+                int otherAction = batch.Actions[index] == 0 ? 1: 0;
+
+                loss[batch.Actions[index]] = -logp * (returns[index] - 10);
+                loss[otherAction] = logp * (returns[index] - 10);
+
                 return loss;
             });
+        }
+
+        float SoftmaxDer(float[] softmax, int i, int j){
+            if(i == j) return softmax[i] * (1 - softmax[i]);
+            else return softmax[i] * softmax[j];
         }
 
         public int Act(float[] state)
@@ -57,6 +68,7 @@ namespace AI
             float sum = 0;
             for(; i < probs.Length; i++){
                 sum += probs[i];
+                if(i == probs.Length - 1) sum = 1.1f;
                 if(sum >= random)
                     break;
             }
