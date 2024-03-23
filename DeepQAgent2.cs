@@ -174,6 +174,7 @@ namespace AI
             if (!directoryPath.EndsWith('/')) directoryPath += '/';
 
             Network.Load(directoryPath);
+            TargetNetwork = Network.Copy();
             ReplayBuffer.Load(directoryPath + "memory");
             Drawing.DebugForever.Add("LOADED");
 
