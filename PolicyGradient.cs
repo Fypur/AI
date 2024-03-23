@@ -41,22 +41,29 @@ namespace AI
             LogitsNetwork.TrainLoss(batch.States,
             (index, logits) =>
             {
+                float[] outputLoss = new float[ActionSize];
                 float[] loss = new float[ActionSize];
                 float[] softmax = Softmax(logits);
-
-                float logp = (float)Math.Log(softmax[batch.Actions[index]]);
                 int otherAction = batch.Actions[index] == 0 ? 1: 0;
 
-                loss[batch.Actions[index]] = -logp * (returns[index] - 10);
-                loss[otherAction] = logp * (returns[index] - 10);
+                //Gotta do some softmax backprop
 
-                return loss;
+                float logp = (float)Math.Log(softmax[batch.Actions[index]]);
+
+                float mean = batch.Rewards.Sum() / batch.Rewards.Length;
+                loss[batch.Actions[index]] = -logp * (returns[index] - 200);
+
+                for (int i = 0; i < ActionSize; i++)
+                    for (int k = 0; k < ActionSize; k++)
+                        outputLoss[i] += SoftmaxDer(softmax, k, i) * loss[k];
+
+                return outputLoss;
             });
         }
 
-        float SoftmaxDer(float[] softmax, int i, int j){
-            if(i == j) return softmax[i] * (1 - softmax[i]);
-            else return softmax[i] * softmax[j];
+        float SoftmaxDer(float[] softmax, int inputIndex, int outputIndex){
+            if(inputIndex == outputIndex) return softmax[inputIndex] * (1 - softmax[inputIndex]);
+            else return -softmax[inputIndex] * softmax[outputIndex];
         }
 
         public int Act(float[] state)
