@@ -10,7 +10,7 @@ namespace AI
 
         private int ActionSize => LogitsNetwork.Layers[LogitsNetwork.Layers.Length - 1];
 
-        public PolicyGradient(int[] layers, float learningRate = 0.001f, float movingAverageBeta = 0.9f, float gamma=0.99f)
+        public PolicyGradient(int[] layers, float learningRate = 0.01f, float movingAverageBeta = 0.9f, float gamma=0.99f)
         {
             LogitsNetwork = new NN2(layers, learningRate, movingAverageBeta);
             Gamma = gamma;
@@ -36,7 +36,17 @@ namespace AI
                 episodeIndex += batch.EpisodeLengths[i];
             }
 
-            Console.WriteLine("Trained");
+            //standardize return
+            float stddeviation = 0; //ecart type
+            float mean = returns.Sum() / returns.Length;
+            for(int i = 0; i < returns.Length; i++)
+                stddeviation += (returns[i] - mean) * (returns[i] - mean);
+
+            stddeviation = (float)Math.Sqrt(stddeviation / returns.Length - 1) + 0.000000000001f;
+
+            for (int i = 0; i < returns.Length; i++)
+                returns[i] = (returns[i] - mean) / stddeviation;
+
 
             LogitsNetwork.TrainLoss(batch.States,
             (index, logits) =>
@@ -50,15 +60,16 @@ namespace AI
 
                 float logp = (float)Math.Log(softmax[batch.Actions[index]]);
 
-                float mean = batch.Rewards.Sum() / batch.Rewards.Length;
-                loss[batch.Actions[index]] = -logp * (returns[index] - 200);
+                loss[batch.Actions[index]] = -logp * returns[index];
 
-                for (int i = 0; i < ActionSize; i++)
-                    for (int k = 0; k < ActionSize; k++)
+                for (int k = 0; k < ActionSize; k++)
+                    for (int i = 0; i < ActionSize; i++)
                         outputLoss[i] += SoftmaxDer(softmax, k, i) * loss[k];
 
                 return outputLoss;
             });
+
+            Console.WriteLine("Trained");
         }
 
         float SoftmaxDer(float[] softmax, int inputIndex, int outputIndex){
