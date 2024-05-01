@@ -213,7 +213,7 @@ namespace AI
                 //Computing the error
                 //The error is basically the derivative of the cost by the z of that neuron at that place
                 for (int i = 0; i < Layers[Layers.Length - 1]; i++)
-                    error[Neurons.Length - 1][i] = 2 * loss[i] * ActivationOutDer(Z[Layers.Length - 1][i]);
+                    error[Neurons.Length - 1][i] = loss[i] * ActivationOutDer(Z[Layers.Length - 1][i]);
 
                 for (int l = Layers.Length - 1; l >= 2; l--)
                 {

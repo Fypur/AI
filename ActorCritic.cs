@@ -3,6 +3,7 @@ using Fiourp;
 
 namespace AI
 {
+    //Made with the help https://www.tensorflow.org/tutorials/reinforcement_learning/actor_critic
     public class ActorCritic
     {
         public NN2 Network;
@@ -14,6 +15,33 @@ namespace AI
         {
             Network = new NN2(layers, learningRate, movingAverageBeta);
             Gamma = gamma;
+        }
+
+        public void TrainOneEpisode(float[][] states, float[] rewards, int[] takenActions)
+        {
+            float[] returns = GetExpectedReturn(rewards);
+
+            Network.TrainLoss(states, (index, output) => ComputeLoss(output, returns[index], takenActions[index]));
+        }
+
+        public float[] ComputeLoss(float[] networkOutput, float expectedReturn, int takenAction) //honestly the most difficult part
+        {
+            float[] softmax = Softmax(networkOutput, networkOutput.Length - 1);
+
+            //float criticLoss = HuberLoss(networkOutput[networkOutput.Length - 1], expectedReturn); //we don't actually care about calculating the huber loss, tensorflow does it because it automatically differentiates it
+            //Calculate differentiated Huber Loss
+            //We just differentiate this https://en.wikipedia.org/wiki/Huber_loss
+            float advantage = expectedReturn - networkOutput[networkOutput.Length - 1];
+            float d = 1;
+            float differentiatedCriticLoss = Math.Abs(advantage) <= advantage ? advantage : d * Math.Sign(advantage);
+
+            float[] differenciatedLoss = new float[networkOutput.Length];
+            differenciatedLoss[differenciatedLoss.Length - 1] = differentiatedCriticLoss;
+
+            for (int action = 0; action < networkOutput.Length - 1; action++)
+                differenciatedLoss[action] = SoftmaxDer(softmax, takenAction, action) * advantage / softmax[takenAction];
+            
+            return differenciatedLoss;
         }
 
         public float[] GetExpectedReturn(float[] rewards)
@@ -58,9 +86,15 @@ namespace AI
             return r;
         }
 
-        float SoftmaxDer(float[] softmax, int inputIndex, int outputIndex){
-            if(inputIndex == outputIndex) return softmax[inputIndex] * (1 - softmax[inputIndex]);
-            else return -softmax[inputIndex] * softmax[outputIndex];
+        float SoftmaxDer(float[] softmax, int takenAction, int inFonctionOf){
+            if(takenAction == inFonctionOf) return softmax[takenAction] * (1 - softmax[takenAction]);
+            else return -softmax[takenAction] * softmax[inFonctionOf];
+        }
+
+        float HuberLoss(float output, float target, float d = 1)
+        {
+            if (Math.Abs(output - target) <= d) return 0.5f * (output - target) * (output - target);
+            else return d * (Math.Abs(output - target) - 0.5f * d);
         }
 
         public int Act(float[] state)
