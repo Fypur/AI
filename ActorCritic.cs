@@ -46,6 +46,8 @@ namespace AI
 
         public float[] GetExpectedReturn(float[] rewards)
         {
+            //LAMBDA RETURN
+            float lambda = 0.95f;
             float[] returns = new float[rewards.Length];
 
             float sum = 0;
@@ -55,16 +57,25 @@ namespace AI
                 sum *= Gamma;
             }
 
-            //standardize return
-            float stddeviation = 0; //ecart type
-            float mean = returns.Sum() / returns.Length;
-            for(int i = 0; i < returns.Length; i++)
-                stddeviation += (returns[i] - mean) * (returns[i] - mean);
+            for(int t = 0; t < rewards.Length; t++){
+                float added = 0;
+                float lambdaPowed = 1;
+                for(int n = 1; n < rewards.Length; n++){
 
-            stddeviation = (float)Math.Sqrt(stddeviation / returns.Length) + 0.000000000001f;
+                    //Calculate n step return
+                    float nStepReturn = 0;
+                    float gammaPow = 1;
+                    for(int i = 0; i < n; i++){
+                        nStepReturn += rewards[t + i] * gammaPow;
+                        gammaPow *= Gamma;
+                    }
 
-            for (int i = 0; i < returns.Length; i++)
-                returns[i] = (returns[i] - mean) / stddeviation;
+                    added += lambdaPowed * nStepReturn;
+                    lambdaPowed *= lambda;
+                }
+
+                returns[t] += (1 - lambda) * added;
+            }
 
             return returns;
         }

@@ -48,7 +48,8 @@ namespace AI
                 returns[i] = (returns[i] - mean) / stddeviation;
 
 
-            LogitsNetwork.TrainLoss(batch.States,
+            throw new Exception("What I wrote here is wrong and I'm too lazy to fix it"); //The backprop doesn't work
+            /*LogitsNetwork.TrainLoss(batch.States,
             (index, logits) =>
             {
                 float[] outputLoss = new float[ActionSize];
@@ -67,9 +68,7 @@ namespace AI
                         outputLoss[i] += SoftmaxDer(softmax, k, i) * loss[k];
 
                 return outputLoss;
-            });
-
-            Console.WriteLine("Trained");
+            });*/
         }
 
         float SoftmaxDer(float[] softmax, int inputIndex, int outputIndex){

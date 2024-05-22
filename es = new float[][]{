@@ -1,0 +1,77 @@
+[33mcommit 15e534c123d1ed031ece2bbb3c3011525a36a349[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: Fypur <84095553+Fypur@users.noreply.github.com>
+Date:   Wed May 1 23:48:33 2024 +0200
+
+    Functionning Actor Critic
+
+[33mcommit 87d8bd0310679a7ec31d0b2bb5fcfc1869b69ac5[m
+Author: f <amine.gati311@gmail.com>
+Date:   Wed May 1 21:30:22 2024 +0200
+
+    Start Actor critic
+
+[33mcommit 25a3483328cea2a69bf216cd5eeefeaf0f30398e[m
+Author: f <amine.gati311@gmail.com>
+Date:   Tue Apr 30 14:26:53 2024 +0200
+
+    C Neural Network
+
+[33mcommit f341e36d7fa8c0353324b0ca421a5580ab7c6a56[m
+Author: Fypur <84095553+Fypur@users.noreply.github.com>
+Date:   Sun Mar 24 20:13:15 2024 +0100
+
+    Standardizing returns, it works
+
+[33mcommit 362fcb3a452c77ddd52dc6fa4bac964bf295a42f[m
+Author: Fypur <84095553+Fypur@users.noreply.github.com>
+Date:   Sat Mar 23 17:37:52 2024 +0100
+
+    It kinda works, Softmax derivative
+
+[33mcommit 5b58487681c009b672f8158c520dd783db2a5435[m
+Author: Fypur <84095553+Fypur@users.noreply.github.com>
+Date:   Sat Mar 23 16:48:46 2024 +0100
+
+    Fixed Not Copying TargetNetwork on Load
+
+[33mcommit ed8e0addeb990bda7f9531ece79f2cbb9cfec248[m
+Author: f <amine.gati311@gmail.com>
+Date:   Fri Mar 22 17:59:25 2024 +0100
+
+    WIP Policy Gradient
+
+[33mcommit b93ef2e91123b96295102db062223fab49c7f884[m
+Author: f <amine.gati311@gmail.com>
+Date:   Thu Mar 21 15:03:15 2024 +0100
+
+    Started Policy Gradient
+
+[33mcommit 9b067ba7e017cf12645a2666fdfdb99c64a7e27c[m
+Author: Fypur <84095553+Fypur@users.noreply.github.com>
+Date:   Wed Mar 6 22:28:14 2024 +0100
+
+    Small Changes
+
+[33mcommit e1dbbc4ce3ca5b6e5c3dbdde2d49b70a32b0fefd[m
+Author: Fypur <84095553+Fypur@users.noreply.github.com>
+Date:   Wed Mar 6 19:12:25 2024 +0100
+
+    Redid Everything
+
+[33mcommit b1e41f09b015a2a55eefa4a05332bfbbc2f3c3a7[m
+Author: f <amine.gati311@gmail.com>
+Date:   Wed Mar 6 15:57:06 2024 +0100
+
+    Started DeepQAgent2
+
+[33mcommit c1ec7343ba680636459f78e20c04248dda020904[m
+Author: Fypur <84095553+Fypur@users.noreply.github.com>
+Date:   Fri Feb 23 19:41:48 2024 +0100
+
+    Move Everything
+
+[33mcommit 91c11c17eff361cb2985720aa31d81d17ad64fde[m
+Author: Fypur <84095553+Fypur@users.noreply.github.com>
+Date:   Fri Feb 23 19:41:10 2024 +0100
+
+    Initial commit
