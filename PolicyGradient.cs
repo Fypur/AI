@@ -48,7 +48,7 @@ namespace AI
                 returns[i] = (returns[i] - mean) / stddeviation;
 
 
-            throw new Exception("What I wrote here is wrong and I'm too lazy to fix it"); //The backprop doesn't work
+            throw new Exception("What I wrote here is wrong and I'm too lazy to fix it, look at Actor Critic to fix"); //The backprop doesn't work
             /*LogitsNetwork.TrainLoss(batch.States,
             (index, logits) =>
             {
@@ -115,19 +115,19 @@ namespace AI
     }
 
     public class PolicyGradientBatch
-        {
-            //Episode -> TimeStep -> value
-            public float[][] States;
-            public float[] Rewards;
-            public int[] Actions;
-            public int[] EpisodeLengths;
+    {
+        //Episode -> TimeStep -> value
+        public float[][] States;
+        public float[] Rewards;
+        public int[] Actions;
+        public int[] EpisodeLengths;
 
-            public PolicyGradientBatch(float[][] states, float[] rewards, int[] actions, int[] episodeLengths)
-            {
-                States = states;
-                Rewards = rewards;
-                Actions = actions;
-                EpisodeLengths = episodeLengths;
-            }
+        public PolicyGradientBatch(float[][] states, float[] rewards, int[] actions, int[] episodeLengths)
+        {
+            States = states;
+            Rewards = rewards;
+            Actions = actions;
+            EpisodeLengths = episodeLengths;
         }
+    }
 }
