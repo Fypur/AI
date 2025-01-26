@@ -23,7 +23,7 @@ namespace AI
 
         public void Load(string inputDir);
 
-        public NN2 Copy();
+        public Network Copy();
     }
 
     public static class NetworkHelp

@@ -7,6 +7,7 @@ namespace AI
         private static Random random = new(); //Random is not thread safe
         public int Capacity; //leaf amount
         private float[] weights;
+        private static Mutex mRand = new Mutex();
 
         public SumTree2(int capacity)
         {
@@ -46,7 +47,11 @@ namespace AI
         public int Sample()
         {
             int index = 0;
+
+            mRand.WaitOne();
             double rand = random.NextDouble() * weights[0];
+            mRand.ReleaseMutex();
+
             while(2 * index + 1 < weights.Length) //child is still in the tree
             {
                 //left child weight

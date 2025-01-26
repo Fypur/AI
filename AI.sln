@@ -7,14 +7,14 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AI", "AI.csproj", "{319EB71
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|Any CPU = Debug|Any CPU
-		Release|Any CPU = Release|Any CPU
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{319EB71F-DA05-4CFB-8633-C817C059F623}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{319EB71F-DA05-4CFB-8633-C817C059F623}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{319EB71F-DA05-4CFB-8633-C817C059F623}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{319EB71F-DA05-4CFB-8633-C817C059F623}.Release|Any CPU.Build.0 = Release|Any CPU
+		{319EB71F-DA05-4CFB-8633-C817C059F623}.Debug|x64.ActiveCfg = Debug|x64
+		{319EB71F-DA05-4CFB-8633-C817C059F623}.Debug|x64.Build.0 = Debug|x64
+		{319EB71F-DA05-4CFB-8633-C817C059F623}.Release|x64.ActiveCfg = Release|x64
+		{319EB71F-DA05-4CFB-8633-C817C059F623}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

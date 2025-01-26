@@ -1,6 +1,5 @@
 using System;
 using System.Reflection;
-using Fiourp;
 
 namespace AI
 {
@@ -139,7 +138,7 @@ namespace AI
         {
             float[] probs = Softmax(Network.FeedForward(state), actionSize);
 
-            float random = Rand.NextDouble();
+            double random = Rand.NextDouble();
             int i = 0;
             float sum = 0;
             for(; i < probs.Length - 1; i++){

@@ -1,12 +1,11 @@
 using System;
-using Fiourp;
 
 namespace AI
 {
     public class DeepQAgent2
     {
         public NN2 Network;
-        public NN2 TargetNetwork;
+        public Network TargetNetwork;
 
         public PrioritizedExperienceReplay2 ReplayBuffer;
         public float Epsilon { get; private set; } = 1;
@@ -165,10 +164,10 @@ namespace AI
 
             directoryPath += '/';
             ReplayBuffer.Save(directoryPath + "memory");
-            Drawing.DebugForever.Add("SAVED");
+            Console.WriteLine("SAVED");
         }
 
-        public void Load(string directoryPath)
+        public void Load(string directoryPath, bool lowerEpsilon = true)
         {
             directoryPath = directoryPath.Replace('\\', '/');
             if (!directoryPath.EndsWith('/')) directoryPath += '/';
@@ -176,10 +175,11 @@ namespace AI
             Network.Load(directoryPath);
             TargetNetwork = Network.Copy();
             ReplayBuffer.Load(directoryPath + "memory");
-            Drawing.DebugForever.Add("LOADED");
+            Console.WriteLine("LOADED");
 
             TrainingStarted = true;
-            epsilonDecay = 100000;
+            if(lowerEpsilon)
+                epsilonDecay = 100000;
         }
     }
 }

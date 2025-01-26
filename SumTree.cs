@@ -4,10 +4,11 @@ namespace AI
 {
     public class SumTree<T>
     {
-        private static Random random = new(); //Random is not thread safe
+        private static Random random = new();
         public int Capacity; //leaf amount
         private T[] data;
         private float[] weights;
+        private static Mutex mRand = new Mutex();
 
         public SumTree(T[] data, float[] dataWeights)
         {
@@ -66,7 +67,11 @@ namespace AI
         public Tuple<T, int> Sample()
         {
             int index = 0;
-            double rand = random.NextDouble() * weights[0];
+
+            mRand.WaitOne();
+            double rand = random.NextDouble() * weights[0]; //Random is not thread safe
+            mRand.ReleaseMutex();
+
             while(2 * index + 1 < weights.Length) //child is still in the tree
             {
                 //left child weight

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Fiourp;
 
 namespace AI;
 
@@ -79,7 +78,7 @@ public class DeepQAgent
         {
             Load(System.IO.Directory.GetCurrentDirectory() + "/network");
             decayStep = 200000;
-            Drawing.DebugForever.Add("LOADED");
+            Console.WriteLine("LOADED");
         }
 
         dataLogger = plot.Add.DataLogger();
@@ -225,7 +224,7 @@ public class DeepQAgent
 
         directoryPath += '/';
         replayBuffer.Save(directoryPath + "memory");
-        Drawing.DebugForever.Add("SAVED");
+        Console.WriteLine("SAVED");
     }
 
     public void Load(string directoryPath)
@@ -234,7 +233,8 @@ public class DeepQAgent
         if (!directoryPath.EndsWith('/')) directoryPath += '/';
 
         Network.Load(directoryPath);
+        RefreshTargetNetwork();
         replayBuffer.Load(directoryPath + "memory");
-        Drawing.DebugForever.Add("LOADED");
+        Console.WriteLine("LOADED");
     }
 }
