@@ -25,11 +25,11 @@ namespace AI
         private int actionSize => Network.Layers[Network.Layers.Length - 1];
 
         
-        public DeepQAgent2(int[] layers, int totalTimesteps = 100000, int targetRefreshRate = 1000, float learningRate = 0.001f, float movingAverageBeta = 0.9f,
-         int memorySize = 65536, float replayAlpha = 0.6f, float replayBeta = 0.4f, float replayBetaIncrease = 0.000001f, float replayEpsilon = 0.000001f,
-         int batchSize = 64, float epsilonMin = 0.03f, float epsilonDecay = 0.0001f, float gamma = 0.99f, bool saveMemory = true, string saveFile = "./memory")
+        public DeepQAgent2(int[] layers, int totalTimesteps = 100000, int targetRefreshRate = 50, float learningRate = 0.001f, float movingAverageBeta = 0.9f,
+         int memorySize = 65536, float replayAlpha = 0.6f, float replayBeta = 0.4f, float replayEpsilon = 0.000001f,
+         int batchSize = 32, float epsilonMin = 0.03f, float epsilonDecay = 0.0001f, float gamma = 0.99f, bool saveMemory = true, string saveFile = "./memory")
         {
-            ReplayBuffer = new PrioritizedExperienceReplay2(memorySize, replayAlpha, replayBeta, replayBetaIncrease, replayEpsilon, batchSize);
+            ReplayBuffer = new PrioritizedExperienceReplay2(memorySize, replayAlpha, replayBeta, (1 - replayBeta)/totalTimesteps, replayEpsilon, batchSize);
             Network = new NN2(layers, learningRate, movingAverageBeta);
             TargetNetwork = Network.Copy();
 
@@ -44,6 +44,8 @@ namespace AI
             this.saveFile = saveFile;
 
             LossPlot = new ScottPlot.Plot();
+            LossPlot.XLabel("timesteps");
+            LossPlot.YLabel("totalError / BatchSize");
             DataLogger = LossPlot.Add.DataLogger();
         }
 
@@ -143,13 +145,15 @@ namespace AI
 
         public void ExportLossGraph()
         {
-            LossPlot.SavePng(System.Environment.CurrentDirectory + "/plot.png", 1000, 1000);
+            LossPlot.SavePng(System.Environment.CurrentDirectory + "/loss.png", 1000, 1000);
             Console.WriteLine("Loss Graph exported step: " + step);
         }
 
         public void ClearLossGraph()
         {
             LossPlot = new();
+            LossPlot.XLabel("timesteps");
+            LossPlot.YLabel("totalError / BatchSize");
             DataLogger = LossPlot.Add.DataLogger();
             Console.WriteLine("Cleared Loss Graph: " + step);
         }
