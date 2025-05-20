@@ -151,6 +151,7 @@ namespace AI
 
         public void ClearLossGraph()
         {
+            LossPlot.Dispose();
             LossPlot = new();
             LossPlot.XLabel("timesteps");
             LossPlot.YLabel("totalError / BatchSize");
