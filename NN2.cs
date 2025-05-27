@@ -19,7 +19,7 @@ namespace AI
         public float[][][] MovingSqrdAverage { get; set; }
         public float[][] MovingSqrdAverageBiases { get; set; }
 
-        public Func<float, float> ActivationHidden { get; set; } = eLU;
+        public Func<float, float> ActivationHidden { get; set; } = ELU;
         public Func<float, float> ActivationOut { get; set; } = LeakyReLU;
         public Func<float, float> ActivationHiddenDer;
         public Func<float, float> ActivationOutDer;
@@ -29,7 +29,7 @@ namespace AI
         private float[][] error;
         private float[][][] moveWeights;
         private float[][] moveBiases;
-        private static JsonSerializerOptions jsonOptions;
+        private static JsonSerializerOptions jsonOptions = new() { WriteIndented = false } ;
 
         public NN2(int[] layers, float learningRate = 0.001f, float beta1 = 0.9f, float beta2 = 0.999f)
         {
@@ -101,12 +101,6 @@ namespace AI
                     }
                 }
             }
-
-            if (jsonOptions == null)
-            {
-                jsonOptions = new();
-                //jsonOptions.WriteIndented = true;
-            }
         }
 
 
@@ -166,10 +160,6 @@ namespace AI
                 }
                 return output;
             });
-
-            totCost /= inputs.Length;
-            Main.DataLogger.Add(Math.Min(totCost, 1.5f));
-            Console.WriteLine("totCost : " + totCost);
         }
 
         public void TrainLoss(float[][] inputs, Func<int, float[], float[]> lossFunction)
@@ -295,14 +285,14 @@ namespace AI
             return 0.01f;
         }
 
-        private static float eLU(float x)
+        private static float ELU(float x)
         {
             if (x >= 0)
                 return x;
             return (float)Math.Exp(x) - 1;
         }
 
-        private static float eLUPrime(float x)
+        private static float ELUPrime(float x)
         {
             if (x > 0)
                 return 1;
@@ -315,7 +305,7 @@ namespace AI
         private static float LinearPrime(float x)
             => 1;
 
-        public Func<float, float> Derivatives(Func<float, float> function)
+        public static Func<float, float> Derivatives(Func<float, float> function)
         {
             if (function == Sigmoid)
                 return SigmoidPrime;
@@ -323,8 +313,8 @@ namespace AI
                 return ReLUPrime;
             if (function == LeakyReLU)
                 return LeakyReLUPrime;
-            if (function == eLU)
-                return eLUPrime;
+            if (function == ELU)
+                return ELUPrime;
             if (function == Linear)
                 return LinearPrime;
             /*if (function == Softmax)
@@ -337,13 +327,13 @@ namespace AI
 
         #region Checks
 
-        void Check(float[] f)
+        private static void Check(float[] f)
         {
             for (int i = 0; i < f.Length; i++)
                 Check(f[i]);
         }
 
-        void Check(float f)
+        private static void Check(float f)
         {
             if (!float.IsNormal(f) && f != 0)
                 throw new Exception("float has been checked as NaN or too big");
@@ -354,7 +344,7 @@ namespace AI
         #region Utils
 
         //https://stackoverflow.com/questions/218060/random-gaussian-variables
-        private float GaussianRandom()
+        private static float GaussianRandom()
         {
             double u1 = 1.0 - Rand.NextDouble(); //uniform(0,1] random doubles
             double u2 = 1.0 - Rand.NextDouble();
@@ -362,7 +352,7 @@ namespace AI
             return (float)randStdNormal;
         }
 
-        private float GaussianRandom(float mean, float standardDeviation)
+        private static float GaussianRandom(float mean, float standardDeviation)
         {
             double u1 = 1.0 - Rand.NextDouble(); //uniform(0,1] random
             double u2 = 1.0 - Rand.NextDouble();
@@ -376,7 +366,7 @@ namespace AI
             string s = JsonSerializer.Serialize(this, jsonOptions);
             filePath = filePath.Replace('\\', '/');
             if (!filePath.EndsWith(".json"))
-                filePath = filePath + ".json";
+                filePath += ".json";
 
             File.WriteAllText(filePath, s);
         }
@@ -385,10 +375,10 @@ namespace AI
         {
             filePath = filePath.Replace('\\', '/');
             if (!filePath.EndsWith(".json"))
-                filePath = filePath + ".json";
+                filePath += ".json";
 
             string s = File.ReadAllText(filePath);
-            JsonSerializer.Deserialize<NN2>(s).CopyTo(this);
+            JsonSerializer.Deserialize<NN2>(s)!.CopyTo(this);
         }
 
         public void CopyTo(NN2 network)
