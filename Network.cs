@@ -9,7 +9,6 @@ namespace AI
     public interface Network
     {
         public float LearningRate { get; set; }
-        public float Beta { get; set; }
 
         public float[] FeedForward(float[] input);
 

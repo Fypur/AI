@@ -1,52 +1,58 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.IO;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
+﻿using System.Text.Json;
 
 namespace AI
 {
     public class NN2 : Network
     {
-        public int[] Layers;
+        public float LearningRate { get; set; }
+        public int[] Layers { get; set; }
+        public float Beta1 { get; set; } = 0.9f;
+        public float Beta2 { get; set; } = 0.999f;
+        public long Timestep { get; set; } = 1;
 
         public float[][] Neurons;
         public float[][] Z;
         public float[][] Biases;
-        public float[][][] Weights;
-        public float[][][] MovingAverage;
-        public float[][] MovingAverageBiases;
+        public float[][][] Weights { get; set; }
+        public float[][][] MovingAverage { get; set; }
+        public float[][] MovingAverageBiases { get; set; }
+        public float[][][] MovingSqrdAverage { get; set; }
+        public float[][] MovingSqrdAverageBiases { get; set; }
 
-        public float LearningRate { get; set; }
-        public static Func<float, float> ActivationHidden = eLU;
-        public static Func<float, float> ActivationOut = Linear;
+        public Func<float, float> ActivationHidden { get; set; } = eLU;
+        public Func<float, float> ActivationOut { get; set; } = LeakyReLU;
+        public Func<float, float> ActivationHiddenDer;
+        public Func<float, float> ActivationOutDer;
 
-        public static Func<float, float> ActivationHiddenDer = Derivatives(ActivationHidden);
-        public static Func<float, float> ActivationOutDer = Derivatives(ActivationOut);
-
-        public float Beta { get; set; } = 0.9f;
+        private const float epsilon = 0.00000001f; //prevent division by zero
 
         private float[][] error;
         private float[][][] moveWeights;
         private float[][] moveBiases;
+        private static JsonSerializerOptions jsonOptions;
 
-        public NN2(int[] layers, float learningRate, float movingAverageBeta)
+        public NN2(int[] layers, float learningRate = 0.001f, float beta1 = 0.9f, float beta2 = 0.999f)
         {
             Layers = layers;
             LearningRate = learningRate;
-            Beta = movingAverageBeta; //0.9f most of the time
+            Beta1 = beta1; //0.9f most of the time
+            Beta2 = beta2; //0.999f most of the time
+
+            /*if (ActivationHidden == Softmax)
+                throw new Exception("Softmax hasn't been implemented to handle hidden layer usage");*/
+
+            ActivationHiddenDer = Derivatives(ActivationHidden);
+            ActivationOutDer = Derivatives(ActivationOut);
 
             //Init Everything
             Neurons = new float[Layers.Length][];
             Z = new float[Layers.Length][];
             Biases = new float[Layers.Length][];
             MovingAverageBiases = new float[Layers.Length][];
+            MovingSqrdAverageBiases = new float[Layers.Length][];
             Weights = new float[Layers.Length][][];
             MovingAverage = new float[Layers.Length][][];
+            MovingSqrdAverage = new float[Layers.Length][][];
             error = new float[Layers.Length][];
 
             Neurons[0] = new float[Layers[0]];
@@ -63,8 +69,10 @@ namespace AI
                 Z[l] = new float[Layers[l]];
                 Biases[l] = new float[Layers[l]];
                 MovingAverageBiases[l] = new float[Layers[l]];
+                MovingSqrdAverageBiases[l] = new float[Layers[l]];
                 Weights[l] = new float[Layers[l]][];
                 MovingAverage[l] = new float[Layers[l]][];
+                MovingSqrdAverage[l] = new float[Layers[l]][];
 
                 error[l] = new float[Neurons[l].Length];
                 moveBiases[l] = new float[Biases[l].Length];
@@ -75,9 +83,11 @@ namespace AI
                     Biases[l][n] = GaussianRandom(0, 0.5f);
 
 
-                    MovingAverageBiases[l][n] = 1;
+                    MovingAverageBiases[l][n] = 0;
+                    MovingSqrdAverageBiases[l][n] = 0;
                     Weights[l][n] = new float[Layers[l - 1]];
                     MovingAverage[l][n] = new float[Layers[l - 1]];
+                    MovingSqrdAverage[l][n] = new float[Layers[l - 1]];
                     moveWeights[l][n] = new float[Weights[l][n].Length];
 
 
@@ -86,9 +96,16 @@ namespace AI
                     for (int prevLayerN = 0; prevLayerN < Neurons[l - 1].Length; prevLayerN++)
                     {
                         Weights[l][n][prevLayerN] = GaussianRandom(0, std);
-                        MovingAverage[l][n][prevLayerN] = 1;
+                        MovingAverage[l][n][prevLayerN] = 0;
+                        MovingSqrdAverage[l][n][prevLayerN] = 0;
                     }
                 }
+            }
+
+            if (jsonOptions == null)
+            {
+                jsonOptions = new();
+                //jsonOptions.WriteIndented = true;
             }
         }
 
@@ -104,7 +121,7 @@ namespace AI
             for (int i = 0; i < Neurons[0].Length; i++)
                 Neurons[0][i] = input[i];
 
-            for(int l = 1; l < Layers.Length; l++)
+            for (int l = 1; l < Layers.Length; l++)
             {
                 //Parallel.For(0, Neurons[l].Length, (n) =>
                 for (int n = 0; n < Neurons[l].Length; n++)
@@ -139,65 +156,20 @@ namespace AI
 
         public void Train(float[][] inputs, float[][] targets)
         {
-            for (int p = 0; p < inputs.Length; p++)
+            float totCost = 0f;
+            TrainLoss(inputs, (i, output) =>
             {
-                float[] input = inputs[p];
-                float[] target = targets[p];
-                float[] output = FeedForward(input);
-
-                //Computing the error
-                //The error is basically the derivative of the cost by the z of that neuron at that place
-                for (int i = 0; i < Layers[Layers.Length - 1]; i++)
-                    error[Neurons.Length - 1][i] = 2 * (target[i] - output[i]) * ActivationOutDer(Z[Layers.Length - 1][i]);
-
-                for (int l = Layers.Length - 1; l >= 2; l--)
+                for (int j = 0; j < output.Length; j++)
                 {
-                    error[l - 1] = new float[Neurons[l - 1].Length];
-                    for (int prevN = 0; prevN < Neurons[l - 1].Length; prevN++)
-                    {
-                        for (int n = 0; n < Neurons[l].Length; n++)
-                            error[l - 1][prevN] += error[l][n] * Weights[l][n][prevN];
-
-                        error[l - 1][prevN] *= ActivationHiddenDer(Z[l - 1][prevN]);
-                    }
+                    output[j] = 2 * (targets[i][j] - output[j]);
+                    totCost += (targets[i][j] - output[j]) * (targets[i][j] - output[j]);
                 }
+                return output;
+            });
 
-
-                for (int l = 1; l < Layers.Length; l++)
-                {
-                    for (int n = 0; n < Neurons[l].Length; n++)
-                    {
-                        moveBiases[l][n] += error[l][n];
-
-                        for (int prevN = 0; prevN < Neurons[l - 1].Length; prevN++)
-                            moveWeights[l][n][prevN] += error[l][n] * Neurons[l - 1][prevN];
-                    }
-                }
-            }
-
-
-            for (int l = 1; l < Layers.Length; l++)
-            {
-                for (int n = 0; n < Neurons[l].Length; n++)
-                {
-                    moveBiases[l][n] /= inputs.Length;
-
-                    MovingAverageBiases[l][n] = Beta * MovingAverageBiases[l][n] + (1 - Beta) * moveBiases[l][n] * moveBiases[l][n];
-                    Biases[l][n] += moveBiases[l][n] * (LearningRate / (float)Math.Sqrt(MovingAverageBiases[l][n]));
-
-                    for (int prevN = 0; prevN < Neurons[l - 1].Length; prevN++)
-                    {
-                        moveWeights[l][n][prevN] /= inputs.Length;
-
-                        MovingAverage[l][n][prevN] = Beta * MovingAverage[l][n][prevN] + (1 - Beta) * moveWeights[l][n][prevN] * moveWeights[l][n][prevN];
-                        Weights[l][n][prevN] += moveWeights[l][n][prevN] * (LearningRate / (float)Math.Sqrt(MovingAverage[l][n][prevN]));
-
-                        moveWeights[l][n][prevN] = 0;
-                    }
-
-                    moveBiases[l][n] = 0;
-                }
-            }
+            totCost /= inputs.Length;
+            Main.DataLogger.Add(Math.Min(totCost, 1.5f));
+            Console.WriteLine("totCost : " + totCost);
         }
 
         public void TrainLoss(float[][] inputs, Func<int, float[], float[]> lossFunction)
@@ -237,22 +209,30 @@ namespace AI
                 }
             }
 
-
             for (int l = 1; l < Layers.Length; l++)
             {
                 for (int n = 0; n < Neurons[l].Length; n++)
                 {
                     moveBiases[l][n] /= inputs.Length;
 
-                    MovingAverageBiases[l][n] = Beta * MovingAverageBiases[l][n] + (1 - Beta) * moveBiases[l][n] * moveBiases[l][n];
-                    Biases[l][n] += moveBiases[l][n] * (LearningRate / (float)Math.Sqrt(MovingAverageBiases[l][n]));
+                    MovingAverageBiases[l][n] = Beta1 * MovingAverageBiases[l][n] + (1 - Beta1) * moveBiases[l][n];
+                    MovingSqrdAverageBiases[l][n] = Beta2 * MovingSqrdAverageBiases[l][n] + (1 - Beta2) * moveBiases[l][n] * moveBiases[l][n];
+                    float mHat = MovingAverageBiases[l][n] / (1f - (float)Math.Pow(Beta1, Timestep));
+                    float vHat = MovingSqrdAverageBiases[l][n] / (1f - (float)Math.Pow(Beta2, Timestep));
+
+                    Biases[l][n] += LearningRate * mHat / ((float)Math.Sqrt(vHat) + epsilon);
 
                     for (int prevN = 0; prevN < Neurons[l - 1].Length; prevN++)
                     {
                         moveWeights[l][n][prevN] /= inputs.Length;
 
-                        MovingAverage[l][n][prevN] = Beta * MovingAverage[l][n][prevN] + (1 - Beta) * moveWeights[l][n][prevN] * moveWeights[l][n][prevN];
-                        Weights[l][n][prevN] += moveWeights[l][n][prevN] * (LearningRate / (float)Math.Sqrt(MovingAverage[l][n][prevN]));
+                        MovingAverage[l][n][prevN] = Beta1 * MovingAverage[l][n][prevN] + (1 - Beta1) * moveWeights[l][n][prevN];
+                        MovingSqrdAverage[l][n][prevN] = Beta2 * MovingSqrdAverage[l][n][prevN] + (1 - Beta2) * moveWeights[l][n][prevN] * moveWeights[l][n][prevN];
+
+                        float mHatW = MovingAverage[l][n][prevN] / (1f - (float)Math.Pow(Beta1, Timestep));
+                        float vHatW = MovingSqrdAverage[l][n][prevN] / (1f - (float)Math.Pow(Beta2, Timestep));
+
+                        Weights[l][n][prevN] += LearningRate * mHatW / ((float)Math.Sqrt(vHatW) + epsilon);
 
                         moveWeights[l][n][prevN] = 0;
                     }
@@ -260,6 +240,8 @@ namespace AI
                     moveBiases[l][n] = 0;
                 }
             }
+
+            Timestep++;
         }
 
         public void CheckNetwork()
@@ -268,7 +250,7 @@ namespace AI
             {
                 Check(Neurons[l]);
 
-                if(l != 0)
+                if (l != 0)
                 {
                     Check(Biases[l]);
 
@@ -299,6 +281,20 @@ namespace AI
             return 0;
         }
 
+        private static float LeakyReLU(float x)
+        {
+            if (x >= 0)
+                return x;
+            return 0.01f * x;
+        }
+
+        private static float LeakyReLUPrime(float x)
+        {
+            if (x > 0)
+                return 1;
+            return 0.01f;
+        }
+
         private static float eLU(float x)
         {
             if (x >= 0)
@@ -319,16 +315,20 @@ namespace AI
         private static float LinearPrime(float x)
             => 1;
 
-        public static Func<float, float> Derivatives(Func<float, float> function)
+        public Func<float, float> Derivatives(Func<float, float> function)
         {
             if (function == Sigmoid)
                 return SigmoidPrime;
             if (function == ReLU)
                 return ReLUPrime;
+            if (function == LeakyReLU)
+                return LeakyReLUPrime;
             if (function == eLU)
                 return eLUPrime;
             if (function == Linear)
                 return LinearPrime;
+            /*if (function == Softmax)
+                return SoftmaxPrime;*/
 
             throw new Exception("Could not find derivative of Activation Function");
         }
@@ -371,69 +371,54 @@ namespace AI
             return (float)randNormal;
         }
 
-        public void Save(string outputDir)
+        public void Save(string filePath)
         {
-            outputDir = outputDir.Replace('\\', '/');
-            if (Directory.Exists(outputDir.Substring(0, outputDir.LastIndexOf('/'))))
-            {
-                Directory.CreateDirectory(outputDir);
-                outputDir += "/";
-            }
-            else
-                throw new Exception("Parent Dir does not exist");
+            string s = JsonSerializer.Serialize(this, jsonOptions);
+            filePath = filePath.Replace('\\', '/');
+            if (!filePath.EndsWith(".json"))
+                filePath = filePath + ".json";
 
-            string jsonW = JsonSerializer.Serialize(this.Weights);
-            string jsonB = JsonSerializer.Serialize(this.Biases);
-            string jsonM = JsonSerializer.Serialize(this.MovingAverage);
-            string jsonMB = JsonSerializer.Serialize(this.MovingAverageBiases);
-            File.WriteAllText(outputDir + "weights.json", jsonW);
-            File.WriteAllText(outputDir + "biases.json", jsonB);
-            File.WriteAllText(outputDir + "movingAverage.json", jsonM);
-            File.WriteAllText(outputDir + "movingAverageBiases.json", jsonMB);
+            File.WriteAllText(filePath, s);
         }
 
-        public void Load(string inputDir)
+        public void Load(string filePath)
         {
-            inputDir = inputDir.Replace('\\', '/');
-            if (inputDir.Last() != '/') inputDir += '/';
+            filePath = filePath.Replace('\\', '/');
+            if (!filePath.EndsWith(".json"))
+                filePath = filePath + ".json";
 
-            string jsonW = File.ReadAllText(inputDir + "weights.json");
-            string jsonB = File.ReadAllText(inputDir + "biases.json");
-            /*NeuralNetwork n = JsonSerializer.Deserialize<NeuralNetwork>(json);
+            string s = File.ReadAllText(filePath);
+            JsonSerializer.Deserialize<NN2>(s).CopyTo(this);
+        }
 
-            LearningRate = n.LearningRate;
-            weights = n.weights;
-            biases = n.biases;*/
-
-            Weights = JsonSerializer.Deserialize<float[][][]>(jsonW);
-            Biases = JsonSerializer.Deserialize<float[][]>(jsonB);
-            MovingAverage = JsonSerializer.Deserialize<float[][][]>(File.ReadAllText(inputDir + "movingAverage.json"));
-            MovingAverageBiases = JsonSerializer.Deserialize<float[][]>(File.ReadAllText(inputDir + "movingAverageBiases.json"));
+        public void CopyTo(NN2 network)
+        {
+            int[] la = new int[Layers.Length];
+            Array.Copy(Layers, la, Layers.Length);
+            network.Layers = la;
+            for (int l = 1; l < Layers.Length; l++)
+            {
+                for (int n = 0; n < Layers[l]; n++)
+                {
+                    network.Biases[l][n] = Biases[l][n];
+                    network.MovingAverageBiases[l][n] = MovingAverageBiases[l][n];
+                    network.MovingSqrdAverageBiases[l][n] = MovingSqrdAverageBiases[l][n];
+                    for (int prevN = 0; prevN < Layers[l - 1]; prevN++)
+                    {
+                        network.Weights[l][n][prevN] = Weights[l][n][prevN];
+                        network.MovingAverage[l][n][prevN] = MovingAverage[l][n][prevN];
+                        network.MovingSqrdAverage[l][n][prevN] = MovingSqrdAverage[l][n][prevN];
+                    }
+                }
+            }
         }
 
         public Network Copy()
         {
+            NN2 nn = new NN2(Layers, LearningRate, Beta1, Beta2);
+            CopyTo(nn);
 
-            float[][][] w = new float[Layers.Length][][];
-            float[][] b = new float[Layers.Length][];
-
-            for (int l = 1; l < Layers.Length; l++)
-            {
-                b[l] = Biases[l];
-                w[l] = new float[Layers[l]][];
-
-                for (int n = 0; n < Layers[l]; n++)
-                {
-                    w[l][n] = new float[Layers[l - 1]];
-                    for (int prevN = 0; prevN < Layers[l - 1]; prevN++)
-                        w[l][n][prevN] = Weights[l][n][prevN];
-                }
-            }
-
-            NN2 neural = new NN2(Layers, LearningRate, Beta);
-            neural.Weights = w;
-            neural.Biases = b;
-            return neural;
+            return nn;
         }
 
         #endregion
