@@ -41,7 +41,7 @@ namespace AI
             for(int i = 0; i < returns.Length; i++)
                 stddeviation += (returns[i] - mean) * (returns[i] - mean);
 
-            stddeviation = (float)Math.Sqrt(stddeviation / returns.Length - 1) + 0.000000000001f;
+            stddeviation = (float)Math.Sqrt(stddeviation / returns.Length) + 0.000000000001f;
 
             for (int i = 0; i < returns.Length; i++)
                 returns[i] = (returns[i] - mean) / stddeviation;

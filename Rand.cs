@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace AI
 {
-    internal class Rand
+    public class Rand
     {
         public static Random random = new Random();
 

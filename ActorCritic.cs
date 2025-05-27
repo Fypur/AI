@@ -19,6 +19,7 @@ namespace AI
 
         public void TrainOneEpisode(float[][] states, float[] rewards, int[] takenActions)
         {
+            float[] adv2 = GetExpectedReturn(states, rewards);
             float[] advantages = GetStandardizedAdvantage(states, rewards);
 
             Network.TrainLoss(states, (index, output) => ComputeLoss(output, advantages[index], takenActions[index]));
@@ -33,15 +34,55 @@ namespace AI
             //We just differentiate this https://en.wikipedia.org/wiki/Huber_loss
             //float advantage = expectedReturn - networkOutput[networkOutput.Length - 1];
             float d = 1;
-            float differentiatedCriticLoss = Math.Abs(advantage) <= advantage ? advantage : d * Math.Sign(advantage);
+            float differentiatedCriticLoss = Math.Abs(advantage) <= d ? advantage : d * Math.Sign(advantage);
 
             float[] differenciatedLoss = new float[networkOutput.Length];
             differenciatedLoss[differenciatedLoss.Length - 1] = differentiatedCriticLoss;
 
             for (int action = 0; action < networkOutput.Length - 1; action++)
                 differenciatedLoss[action] = SoftmaxDer(softmax, takenAction, action) * advantage / softmax[takenAction];
+
+            for(int i = 0; i < differenciatedLoss.Length; i++)
+            {
+                if (float.IsNaN(differenciatedLoss[i]))
+                { }
+            }
             
             return differenciatedLoss;
+        }
+
+        public float[] GetExpectedReturn(float[][] states, float[] rewards)
+        {
+            float[] returns = new float[rewards.Length];
+
+
+            for (int i = 0; i < returns.Length; i++)
+                returns[i] = rewards[i];
+
+            float sum = 0;
+            for (int j = rewards.Length - 1; j >= 0; j--)
+            {
+                float temp = sum;
+                sum += rewards[j];
+                returns[j] += temp;
+                sum *= Gamma;
+            }
+
+            for (int i = 0; i < rewards.Length; i++)
+                returns[i] -= Network.FeedForward(states[i])[actionSize];
+
+            //standardize return
+            float stddeviation = 0; //ecart type
+            float mean = returns.Sum() / returns.Length;
+            for (int i = 0; i < returns.Length; i++)
+                stddeviation += (returns[i] - mean) * (returns[i] - mean);
+
+            stddeviation = (float)Math.Sqrt(stddeviation / (returns.Length)) + 0.000000000001f;
+
+            for (int i = 0; i < returns.Length; i++)
+                returns[i] = (returns[i] - mean) / stddeviation;
+
+            return returns;
         }
 
         public float[] GetStandardizedAdvantage(float[][] states, float[] rewards)
@@ -59,34 +100,20 @@ namespace AI
             for (int t = 0; t < rewards.Length; t++)
             {
                 float lambdaPowed = 1;
-                for(int n = 1; n < rewards.Length - t - 1; n++)
+                for(int n = 1; n < rewards.Length - t; n++)
                 {
                     returns[t] += lambdaPowed * NStepReturn(t, n, values[t + n]);
                     lambdaPowed *= lambda;
                 }
 
                 returns[t] *= 1 - lambda;
-                returns[t] += lambdaPowed * NStepReturn(t, rewards.Length - t - 1, values[rewards.Length - 1]);
-
-                if (float.IsNaN(returns[t]))
-                { }
+                returns[t] += lambdaPowed * NStepReturn(t, rewards.Length - t, 0);
             }
-
-            float mean = 0;
-            float stdDeviation = 0;
 
             for(int i = 0; i < rewards.Length; i++)
-            {
                 advantages[i] = returns[i] - values[i];
-                mean += advantages[i];
-                stdDeviation += advantages[i] * advantages[i];
-            }
 
-            mean /= rewards.Length;
-            stdDeviation = (float)Math.Sqrt(stdDeviation / returns.Length) + 0.000000000001f;
-
-            for (int i = 0; i < rewards.Length; i++)
-                advantages[i] = (advantages[i] - mean) / stdDeviation;
+            Standardize(advantages);
 
             return advantages;
 
@@ -95,7 +122,7 @@ namespace AI
             {
                 float nReturn = 0;
                 float gammaPowed = 1;
-                for (int i = index; i < Math.Min(n, rewards.Length); i++)
+                for (int i = index; i < Math.Min(i + n, rewards.Length); i++)
                 {
                     nReturn += rewards[i] * gammaPowed;
                     gammaPowed *= Gamma;
@@ -104,6 +131,19 @@ namespace AI
                 nReturn += gammaPowed * valueNStepsFurther;
                 return nReturn;
             }
+        }
+
+        public void Standardize(float[] data)
+        {
+            float stdDeviation = 0;
+            float mean = data.Sum() / data.Length;
+            for (int i = 0; i < data.Length; i++)
+                stdDeviation += (data[i] - mean) * (data[i] - mean);
+
+            stdDeviation = (float)Math.Sqrt(stdDeviation / data.Length) + 0.000000000001f;
+
+            for (int i = 0; i < data.Length; i++)
+                data[i] = (data[i] - mean) / stdDeviation;
         }
 
         public float[] Softmax(float[] input, int length)
