@@ -1,40 +1,69 @@
 ﻿namespace AI
 {
+    public enum ActivationTypes { ReLU, ELU, Linear, LeakyReLU, Sigmoid }
     public static class Activations
     {
-        public enum ActivationTypes { ReLU, ELU, Linear, LeakyReLu, Sigmoid }
+        public static void ReLU(float[] x, float[] result)
+        {
+            for (int i = 0; i < x.Length; i++)
+                result[i] = x[i] > 0 ? x[i] : 0;
+        }
 
-        public static float ReLU(float x)
-            => x >= 0 ? x : 0;
+        public static void ReLUDerivative(float[] x, float[] result)
+        {
+            for (int i = 0; i < x.Length; i++)
+                result[i] = x[i] > 0 ? 1 : 0;
+        }
 
-        public static float ReLUDerivative(float x)
-            => x > 0 ? 1 : 0;
+        public static void ELU(float[] x, float[] result)
+        {
+            for (int i = 0; i < x.Length; i++)
+                result[i] = x[i] >= 0 ? x[i] : (float)Math.Exp(x[i]) - 1;
+        }
 
-        public static float ELU(float x)
-            => x >= 0 ? x : (float)Math.Exp(x) - 1;
+        public static void ELUDerivative(float[] x, float[] result)
+        {
+            for (int i = 0; i < x.Length; i++)
+                result[i] = x[i] > 0 ? 1 : (float)Math.Exp(x[i]);
+        }
 
-        public static float ELUDerivative(float x)
-            => x > 0 ? 1 : (float)Math.Exp(x);
+        public static void Linear(float[] x, float[] result)
+        { }
 
-        public static float Linear(float x)
-            => x;
+        public static void LinearDerivative(float[] x, float[] result)
+        {
+            for (int i = 0; i < x.Length; i++)
+                result[i] = 1;
+        }
 
-        public static float LinearDerivative(float x)
-            => 1;
+        public static void LeakyReLU(float[] x, float[] result)
+        {
+            for (int i = 0; i < x.Length; i++)
+                result[i] = x[i] >= 0 ? x[i] : 0.01f * x[i];
+        }
 
-        public static float LeakyReLU(float x)
-            => x >= 0 ? x : 0.01f * x;
+        public static void LeakyReLUDerivative(float[] x, float[] result)
+        {
+            for (int i = 0; i < x.Length; i++)
+                result[i] = x[i] > 0 ? 1 : 0.01f;
+        }
 
-        public static float LeakyReLUDerivative(float x)
-            => x > 0 ? 1 : 0.01f;
+        public static void Sigmoid(float[] x, float[] result)
+        {
+            for (int i = 0; i < x.Length; i++)
+                result[i] = (float)(1 / (1 + Math.Exp(-x[i])));
+        }
 
-        public static float Sigmoid(float x)
-            => (float)(1 / (1 + Math.Exp(-x)));
+        public static void SigmoidDerivative(float[] x, float[] result)
+        {
+            for (int i = 0; i < x.Length; i++)
+            {
+                float s = (float)(1 / (1 + Math.Exp(-x[i])));
+                result[i] = s * (1 - s);
+            }
+        }
 
-        public static float SigmoidDerivative(float x)
-            => Sigmoid(x) * (1 - Sigmoid(x));
-
-        public static Func<float, float> GetActivationFunction(ActivationTypes activationType)
+        public static Action<float[], float[]> GetActivationFunction(ActivationTypes activationType)
         {
             switch (activationType)
             {
@@ -44,7 +73,7 @@
                     return ReLU;
                 case ActivationTypes.ELU:
                     return ELU;
-                case ActivationTypes.LeakyReLu:
+                case ActivationTypes.LeakyReLU:
                     return LeakyReLU;
                 case ActivationTypes.Sigmoid:
                     return Sigmoid;
@@ -53,7 +82,7 @@
             throw new Exception($"Activation function of type {activationType} is not yet implemented");
         }
 
-        public static Func<float, float> GetActivationDerivative(ActivationTypes activationType)
+        public static Action<float[], float[]> GetActivationDerivative(ActivationTypes activationType)
         {
             switch (activationType)
             {
@@ -63,7 +92,7 @@
                     return ReLUDerivative;
                 case ActivationTypes.ELU:
                     return ELUDerivative;
-                case ActivationTypes.LeakyReLu:
+                case ActivationTypes.LeakyReLU:
                     return LeakyReLUDerivative;
                 case ActivationTypes.Sigmoid:
                     return SigmoidDerivative;

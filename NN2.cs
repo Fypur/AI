@@ -20,8 +20,8 @@ namespace AI
         public float[][][] MovingSqrdAverage { get; set; }
         public float[][] MovingSqrdAverageBiases { get; set; }
 
-        public Func<float, float> ActivationHidden { get; set; } = Activations.ELU;
-        public Func<float, float> ActivationOut { get; set; } = Activations.LeakyReLU;
+        public Func<float, float> ActivationHidden { get; set; } = LeakyReLU;
+        public Func<float, float> ActivationOut { get; set; } = Sigmoid;
         public Func<float, float> ActivationHiddenDer;
         public Func<float, float> ActivationOutDer;
 
@@ -42,8 +42,8 @@ namespace AI
             /*if (ActivationHidden == Softmax)
                 throw new Exception("Softmax hasn't been implemented to handle hidden layer usage");*/
 
-            ActivationHiddenDer = Activations.GetActivationFunction(Activations.ActivationTypes.ELU);
-            ActivationOutDer = Activations.GetActivationDerivative(Activations.ActivationTypes.LeakyReLu);
+            ActivationHiddenDer = Derivatives(ActivationHidden);
+            ActivationOutDer = Derivatives(ActivationOut);
 
             //Init Everything
             Neurons = new float[Layers.Length][];
@@ -317,6 +317,54 @@ namespace AI
             CopyTo(nn);
 
             return nn;
+        }
+
+        public static float ReLU(float x)
+            => x >= 0 ? x : 0;
+
+        public static float ReLUDerivative(float x)
+            => x > 0 ? 1 : 0;
+
+        public static float ELU(float x)
+            => x >= 0 ? x : (float)Math.Exp(x) - 1;
+
+        public static float ELUDerivative(float x)
+            => x > 0 ? 1 : (float)Math.Exp(x);
+
+        public static float Linear(float x)
+            => x;
+
+        public static float LinearDerivative(float x)
+            => 1;
+
+        public static float LeakyReLU(float x)
+            => x >= 0 ? x : 0.01f * x;
+
+        public static float LeakyReLUDerivative(float x)
+            => x > 0 ? 1 : 0.01f;
+
+        public static float Sigmoid(float x)
+            => (float)(1 / (1 + Math.Exp(-x)));
+
+        public static float SigmoidDerivative(float x)
+            => Sigmoid(x) * (1 - Sigmoid(x));
+
+        public static Func<float, float> Derivatives(Func<float, float> function)
+        {
+            if (function == Sigmoid)
+                return SigmoidDerivative;
+            if (function == ReLU)
+                return ReLUDerivative;
+            if (function == LeakyReLU)
+                return LeakyReLUDerivative;
+            if (function == ELU)
+                return ELUDerivative;
+            if (function == Linear)
+                return LinearDerivative;
+            /*if (function == Softmax)
+                return SoftmaxPrime;*/
+
+            throw new Exception("Could not find derivative of Activation Function");
         }
 
         #endregion

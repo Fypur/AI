@@ -12,14 +12,10 @@ namespace AI
         public float[][] Biases;
         public float[][] Weights;
 
-        public Func<float, float>[] ActivationFunctions;
-        public Func<float, float>[] ActivationFunctionsDerivatives;
+        public Action<float[], float[]>[] ActivationFunctions;
+        public Action<float[], float[]>[] ActivationFunctionsDerivatives;
 
-
-
-        private const float epsilon = 1e-8f; //prevent division by zero
-
-        public NNFast(int[] layers, Activations.ActivationTypes[] activationFunctionsTypes, float learningRate)
+        public NNFast(int[] layers, ActivationTypes[] activationFunctionsTypes, float learningRate)
         {
             if (layers == null)
                 throw new Exception("Layers given are null");
@@ -51,15 +47,15 @@ namespace AI
                     float std = MathF.Sqrt(2.0f / Layers[l - 1]); // He initialization
                     for (int i = 0; i < Layers[l]; i++)
                     {
-                        for (int j = 0; j < Layers[j - 1]; j++)
-                            Weights[l][i * Layers[i] + j] = Utils.GaussianRandom(0, std);
+                        for (int j = 0; j < Layers[l - 1]; j++)
+                            Weights[l][i * Layers[l - 1] + j] = Utils.GaussianRandom(0, std);
                     }
 
                 }
             }
 
-            ActivationFunctions = new Func<float, float>[Layers.Length];
-            ActivationFunctionsDerivatives = new Func<float, float>[Layers.Length];
+            ActivationFunctions = new Action<float[], float[]>[Layers.Length];
+            ActivationFunctionsDerivatives = new Action<float[], float[]>[Layers.Length];
 
             for (int i = 1; i < layers.Length; i++)
             {
@@ -69,27 +65,22 @@ namespace AI
 
         }
 
-        public float[] FeedForward(float[] input)
+        public float[] FeedForward(float[] input, float[] output)
         {
             if (input.Length != Layers[0])
                 throw new Exception("Input is not of right size");
 
             Buffer.BlockCopy(input, 0, Neurons[0], 0, sizeof(float) * Layers[0]); //copy input into Neurons (fast)
 
-
             for (int l = 1; l < Layers.Length; l++)
             {
                 for (int n = 0; n < Neurons[l].Length; n++)
-                {
-
                     Z[l][n] = TensorPrimitives.Dot(Weights[l].AsSpan(Layers[l - 1] * n, Layers[l - 1]), Neurons[l - 1]) + Biases[l][n];
-                    Neurons[l][n] = ActivationFunctions[l](Z[l][n]);
-                }
+
+                ActivationFunctions[l](Z[l], Neurons[l]);
             }
 
-            float[] output = new float[Neurons[Layers.Length - 1].Length];
             Buffer.BlockCopy(Neurons[Layers.Length - 1], 0, output, 0, sizeof(float) * Layers[Layers.Length - 1]);
-
             return output;
         }
     }
