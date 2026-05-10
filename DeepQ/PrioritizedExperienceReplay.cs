@@ -6,6 +6,7 @@ namespace AI.DeepQ
         public float Alpha;
         public float Beta;
         public float BetaIncrease;
+        public float Epsilon;
         public int BatchSize;
         public bool Filled;
 
