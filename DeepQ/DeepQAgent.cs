@@ -7,7 +7,7 @@ namespace AI
         public NN2 Network;
         public Network TargetNetwork;
 
-        public PrioritizedExperienceReplay2 ReplayBuffer;
+        public PrioritizedExperienceReplay ReplayBuffer;
         public float Epsilon { get; private set; } = 1;
         public float Gamma { get; private set; }
         public int TotalTimeSteps { get; private set; } //TODO: BETA DECAY TO 1 WITH TOTALTIMESTEPS
@@ -29,7 +29,7 @@ namespace AI
          int memorySize = 65536, float replayAlpha = 0.6f, float replayBeta = 0.4f, float replayEpsilon = 0.000001f,
          int batchSize = 32, float epsilonMin = 0.03f, float epsilonDecay = 0.0001f, float gamma = 0.99f, bool saveMemory = true, string saveFile = "./memory")
         {
-            ReplayBuffer = new PrioritizedExperienceReplay2(memorySize, replayAlpha, replayBeta, (1 - replayBeta)/totalTimesteps, replayEpsilon, batchSize);
+            ReplayBuffer = new PrioritizedExperienceReplay(memorySize, replayAlpha, replayBeta, (1 - replayBeta)/totalTimesteps, replayEpsilon, batchSize);
             Network = new NN2(layers, learningRate, movingAverageBeta);
             TargetNetwork = Network.Copy();
 
@@ -69,7 +69,7 @@ namespace AI
 
             float totalError = 0;
 
-            Sample sample = ReplayBuffer.Sample();
+            Sample sample = ReplayBuffer.Sample(); //Sample from Experience Replay
             float[][] inputs = new float[sample.Experience.Length][];
             int[] nextStateArgmax = new int[sample.Experience.Length];
 
@@ -87,6 +87,7 @@ namespace AI
                 float weight = sample.Weights[bacthIndex];
                 int replayIndex = sample.Indices[bacthIndex];
 
+                //Utilisation de Bellman
                 float tdError;
                 if (exp.Done)
                     tdError = exp.Reward;

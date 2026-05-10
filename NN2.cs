@@ -2,6 +2,7 @@
 
 namespace AI
 {
+    //Naive Implementation of a neural network
     public class NN2 : Network
     {
         public float LearningRate { get; set; }
@@ -29,7 +30,7 @@ namespace AI
         private float[][] error;
         private float[][][] moveWeights;
         private float[][] moveBiases;
-        private static JsonSerializerOptions jsonOptions = new() { WriteIndented = false } ;
+        private static JsonSerializerOptions jsonOptions = new() { WriteIndented = false };
 
         public NN2(int[] layers, float learningRate = 0.001f, float beta1 = 0.9f, float beta2 = 0.999f)
         {

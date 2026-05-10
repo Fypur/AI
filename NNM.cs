@@ -1,15 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.IO;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
+﻿using System.Text.Json;
 
 namespace AI
 {
+    //Multithreaded version of NN2
     public class NNM : Network
     {
         public int[] Layers;
@@ -144,7 +137,7 @@ namespace AI
             for (int i = 0; i < Layers[0]; i++)
                 Neurons[id][0][i] = input[i];
 
-            for(int l = 1; l < Layers.Length; l++)
+            for (int l = 1; l < Layers.Length; l++)
             {
                 //Parallel.For(0, Layers[l], (n) =>
                 for (int n = 0; n < Layers[l]; n++)
@@ -194,7 +187,7 @@ namespace AI
             this.lossFunction = lossFunction;
             Thread[] t = new Thread[NThread];
 
-            for(int i = 0; i < NThread; i++)
+            for (int i = 0; i < NThread; i++)
             {
                 int j = i;
                 t[i] = new Thread(() => TrainT(j)); //Use j or else it breaks (using &i instead of !i)
@@ -332,10 +325,10 @@ namespace AI
         {
             for (int l = 0; l < Layers.Length; l++)
             {
-                for(int t = 0; t < NThread; t++)
+                for (int t = 0; t < NThread; t++)
                     Check(Neurons[t][l]);
 
-                if(l != 0)
+                if (l != 0)
                 {
                     Check(Biases[l]);
 

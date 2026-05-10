@@ -1,22 +1,21 @@
 namespace AI
 {
-    public class PrioritizedExperienceReplay2
+    public class PrioritizedExperienceReplay
     {
         public int Capacity { get; private set; }
         public float Alpha;
         public float Beta;
         public float BetaIncrease;
-        public float Epsilon;
         public int BatchSize;
         public bool Filled;
 
-        private SumTree2 sumTree;
+        private SumTree sumTree;
         private MinTree minTree;
         private float MaxPriority = 1;
         private Experience[] data;
         private int iMemory;
 
-        public PrioritizedExperienceReplay2(int capacity, float alpha, float beta, float betaIncrease, float epsilon, int batchSize)
+        public PrioritizedExperienceReplay(int capacity, float alpha, float beta, float betaIncrease, float epsilon, int batchSize)
         {
             int pow2 = 1;
             while (pow2 < capacity)
@@ -35,7 +34,7 @@ namespace AI
             MaxPriority = 1;
 
             data = new Experience[capacity];
-            sumTree = new SumTree2(capacity);
+            sumTree = new SumTree(capacity);
             minTree = new MinTree(capacity);
         }
 
@@ -47,9 +46,9 @@ namespace AI
 
             sumTree.ChangeWeight(iMemory, alphaPriority);
             minTree.ChangeWeight(iMemory, alphaPriority);
-            
+
             iMemory++;
-            if(iMemory >= data.Length)
+            if (iMemory >= data.Length)
             {
                 iMemory = 0;
                 Filled = true;
@@ -79,7 +78,7 @@ namespace AI
 
             double maxWeight = Math.Pow(Capacity * minTree.Minimum() / sumTree.Sum(), -Beta);
 
-            for(int i = 0; i < BatchSize; i++)
+            for (int i = 0; i < BatchSize; i++)
             {
                 sample.Indices[i] = sumTree.Sample();
                 sample.Experience[i] = data[sample.Indices[i]];
@@ -117,7 +116,7 @@ namespace AI
 
             Tuple<Experience[], float[], int, float> saved = System.Text.Json.JsonSerializer.Deserialize<Tuple<Experience[], float[], int, float>>(System.IO.File.ReadAllText(path));
 
-            for(int i = 0; i < saved.Item1.Length; i++)
+            for (int i = 0; i < saved.Item1.Length; i++)
             {
                 data[i] = saved.Item1[i];
                 sumTree.ChangeWeight(i, saved.Item2[i]);
