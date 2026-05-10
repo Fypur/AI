@@ -1,4 +1,4 @@
-namespace AI
+namespace AI.DeepQ
 {
     public class SumTree
     {

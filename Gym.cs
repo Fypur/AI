@@ -1,13 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using AI.DeepQ;
 
 namespace AI
 {
     public abstract class Gym
     {
+        //TODO: Generalize this to any type of agent, not just DeepQ
         public DeepQAgent2 Agent;
 
         public uint Step;
@@ -33,7 +30,7 @@ namespace AI
 
         public void DoStep()
         {
-            if(Agent.TrainingStarted)
+            if (Agent.TrainingStarted)
                 Step++;
 
             EpisodeStep++;
@@ -47,7 +44,7 @@ namespace AI
             float[] nextState = GetState();
             bool done = Done();
 
-            
+
 
             Agent.Remember(new Experience(state, action, reward, nextState, done));
             Agent.Replay();

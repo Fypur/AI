@@ -1,6 +1,4 @@
-using System;
-
-namespace AI
+namespace AI.DeepQ
 {
     public class DeepQAgent2
     {
@@ -24,12 +22,12 @@ namespace AI
         private string saveFile;
         private int actionSize => Network.Layers[Network.Layers.Length - 1];
 
-        
+
         public DeepQAgent2(int[] layers, int totalTimesteps = 100000, int targetRefreshRate = 50, float learningRate = 0.001f, float movingAverageBeta = 0.9f,
          int memorySize = 65536, float replayAlpha = 0.6f, float replayBeta = 0.4f, float replayEpsilon = 0.000001f,
          int batchSize = 32, float epsilonMin = 0.03f, float epsilonDecay = 0.0001f, float gamma = 0.99f, bool saveMemory = true, string saveFile = "./memory")
         {
-            ReplayBuffer = new PrioritizedExperienceReplay(memorySize, replayAlpha, replayBeta, (1 - replayBeta)/totalTimesteps, replayEpsilon, batchSize);
+            ReplayBuffer = new PrioritizedExperienceReplay(memorySize, replayAlpha, replayBeta, (1 - replayBeta) / totalTimesteps, replayEpsilon, batchSize);
             Network = new NN2(layers, learningRate, movingAverageBeta);
             TargetNetwork = Network.Copy();
 
@@ -51,7 +49,7 @@ namespace AI
 
         public int Act(float[] state)
         {
-            if(!TrainingStarted)
+            if (!TrainingStarted)
                 return Rand.NextInt(0, actionSize);
 
             Epsilon = epsilonMin + (1 - epsilonMin) * (float)Math.Exp(-epsilonDecay * step);
@@ -73,7 +71,7 @@ namespace AI
             float[][] inputs = new float[sample.Experience.Length][];
             int[] nextStateArgmax = new int[sample.Experience.Length];
 
-            for(int i = 0; i < sample.Experience.Length; i++)
+            for (int i = 0; i < sample.Experience.Length; i++)
             {
                 inputs[i] = sample.Experience[i].State;
                 nextStateArgmax[i] = ArgMax(Network.FeedForward(sample.Experience[i].NextState));
@@ -130,9 +128,9 @@ namespace AI
         {
             float max = array[0];
             int index = 0;
-            for(int i = 1; i < array.Length; i++)
+            for (int i = 1; i < array.Length; i++)
             {
-                if(array[i] > max)
+                if (array[i] > max)
                 {
                     max = array[i];
                     index = i;
@@ -184,7 +182,7 @@ namespace AI
             Console.WriteLine("LOADED");
 
             TrainingStarted = true;
-            if(lowerEpsilon)
+            if (lowerEpsilon)
                 epsilonDecay = 100000;
         }
     }

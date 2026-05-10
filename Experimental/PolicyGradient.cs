@@ -1,5 +1,5 @@
 
-namespace AI
+namespace AI.Experimental
 {
     public class PolicyGradient
     {
@@ -8,7 +8,7 @@ namespace AI
 
         private int ActionSize => LogitsNetwork.Layers[LogitsNetwork.Layers.Length - 1];
 
-        public PolicyGradient(int[] layers, float learningRate = 0.01f, float movingAverageBeta = 0.9f, float gamma=0.99f)
+        public PolicyGradient(int[] layers, float learningRate = 0.01f, float movingAverageBeta = 0.9f, float gamma = 0.99f)
         {
             LogitsNetwork = new NN2(layers, learningRate, movingAverageBeta);
             Gamma = gamma;
@@ -17,14 +17,15 @@ namespace AI
         public void Train(PolicyGradientBatch batch)
         {
             float[] returns = new float[batch.Rewards.Length];
-            for(int i = 0; i < returns.Length; i++)
+            for (int i = 0; i < returns.Length; i++)
                 returns[i] = batch.Rewards[i];
 
             int episodeIndex = 0;
-            for(int i = 0; i < batch.EpisodeLengths.Length; i++)
+            for (int i = 0; i < batch.EpisodeLengths.Length; i++)
             {
                 float sum = 0;
-                for(int j = episodeIndex + batch.EpisodeLengths[i] - 1; j >= episodeIndex; j--){
+                for (int j = episodeIndex + batch.EpisodeLengths[i] - 1; j >= episodeIndex; j--)
+                {
                     float temp = sum;
                     sum += returns[j];
                     returns[j] += temp;
@@ -37,7 +38,7 @@ namespace AI
             //standardize return
             float stddeviation = 0; //ecart type
             float mean = returns.Sum() / returns.Length;
-            for(int i = 0; i < returns.Length; i++)
+            for (int i = 0; i < returns.Length; i++)
                 stddeviation += (returns[i] - mean) * (returns[i] - mean);
 
             stddeviation = (float)Math.Sqrt(stddeviation / returns.Length) + 0.000000000001f;
@@ -69,8 +70,9 @@ namespace AI
             });*/
         }
 
-        float SoftmaxDer(float[] softmax, int inputIndex, int outputIndex){
-            if(inputIndex == outputIndex) return softmax[inputIndex] * (1 - softmax[inputIndex]);
+        float SoftmaxDer(float[] softmax, int inputIndex, int outputIndex)
+        {
+            if (inputIndex == outputIndex) return softmax[inputIndex] * (1 - softmax[inputIndex]);
             else return -softmax[inputIndex] * softmax[outputIndex];
         }
 
@@ -81,10 +83,11 @@ namespace AI
             float random = Rand.NextDouble();
             int i = 0;
             float sum = 0;
-            for(; i < probs.Length; i++){
+            for (; i < probs.Length; i++)
+            {
                 sum += probs[i];
-                if(i == probs.Length - 1) sum = 1.1f;
-                if(sum >= random)
+                if (i == probs.Length - 1) sum = 1.1f;
+                if (sum >= random)
                     break;
             }
 
@@ -99,13 +102,13 @@ namespace AI
             float[] r = new float[input.Length];
             float sum = 0;
 
-            for(int i = 0; i < r.Length; i++)
+            for (int i = 0; i < r.Length; i++)
             {
                 r[i] = (float)Math.Exp(input[i]);
                 sum += r[i];
             }
 
-            for(int i = 0; i < r.Length; i++)
+            for (int i = 0; i < r.Length; i++)
                 r[i] /= sum;
 
             return r;

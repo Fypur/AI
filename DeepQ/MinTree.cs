@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace AI
+﻿namespace AI.DeepQ
 {
     public class MinTree
     {
@@ -17,7 +11,7 @@ namespace AI
             int nodeAmount = Capacity * 2 - 1;
 
             weights = new float[nodeAmount];
-            for(int i = 0; i < weights.Length; i++)
+            for (int i = 0; i < weights.Length; i++)
                 weights[i] = float.PositiveInfinity;
         }
 
