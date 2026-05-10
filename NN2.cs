@@ -20,8 +20,8 @@ namespace AI
         public float[][][] MovingSqrdAverage { get; set; }
         public float[][] MovingSqrdAverageBiases { get; set; }
 
-        public Func<float, float> ActivationHidden { get; set; } = ELU;
-        public Func<float, float> ActivationOut { get; set; } = LeakyReLU;
+        public Func<float, float> ActivationHidden { get; set; } = Activations.ELU;
+        public Func<float, float> ActivationOut { get; set; } = Activations.LeakyReLU;
         public Func<float, float> ActivationHiddenDer;
         public Func<float, float> ActivationOutDer;
 
@@ -42,8 +42,8 @@ namespace AI
             /*if (ActivationHidden == Softmax)
                 throw new Exception("Softmax hasn't been implemented to handle hidden layer usage");*/
 
-            ActivationHiddenDer = Derivatives(ActivationHidden);
-            ActivationOutDer = Derivatives(ActivationOut);
+            ActivationHiddenDer = Activations.GetActivationFunction(Activations.ActivationTypes.ELU);
+            ActivationOutDer = Activations.GetActivationDerivative(Activations.ActivationTypes.LeakyReLu);
 
             //Init Everything
             Neurons = new float[Layers.Length][];
@@ -81,7 +81,7 @@ namespace AI
 
                 for (int n = 0; n < Neurons[l].Length; n++)
                 {
-                    Biases[l][n] = GaussianRandom(0, 0.5f);
+                    Biases[l][n] = Utils.GaussianRandom(0, 0.5f);
 
 
                     MovingAverageBiases[l][n] = 0;
@@ -96,7 +96,7 @@ namespace AI
 
                     for (int prevLayerN = 0; prevLayerN < Neurons[l - 1].Length; prevLayerN++)
                     {
-                        Weights[l][n][prevLayerN] = GaussianRandom(0, std);
+                        Weights[l][n][prevLayerN] = Utils.GaussianRandom(0, std);
                         MovingAverage[l][n][prevLayerN] = 0;
                         MovingSqrdAverage[l][n][prevLayerN] = 0;
                     }
@@ -251,81 +251,6 @@ namespace AI
             }
         }
 
-        #region Activations
-        public static float Sigmoid(float x)
-            => (float)(1 / (1 + Math.Exp(-x)));
-
-        private static float SigmoidPrime(float x)
-            => Sigmoid(x) * (1 - Sigmoid(x));
-
-        private static float ReLU(float x)
-        {
-            if (x >= 0)
-                return x;
-            return 0;
-        }
-
-        private static float ReLUPrime(float x)
-        {
-            if (x > 0)
-                return 1;
-            return 0;
-        }
-
-        private static float LeakyReLU(float x)
-        {
-            if (x >= 0)
-                return x;
-            return 0.01f * x;
-        }
-
-        private static float LeakyReLUPrime(float x)
-        {
-            if (x > 0)
-                return 1;
-            return 0.01f;
-        }
-
-        private static float ELU(float x)
-        {
-            if (x >= 0)
-                return x;
-            return (float)Math.Exp(x) - 1;
-        }
-
-        private static float ELUPrime(float x)
-        {
-            if (x > 0)
-                return 1;
-            return (float)Math.Exp(x);
-        }
-
-        private static float Linear(float x)
-            => x;
-
-        private static float LinearPrime(float x)
-            => 1;
-
-        public static Func<float, float> Derivatives(Func<float, float> function)
-        {
-            if (function == Sigmoid)
-                return SigmoidPrime;
-            if (function == ReLU)
-                return ReLUPrime;
-            if (function == LeakyReLU)
-                return LeakyReLUPrime;
-            if (function == ELU)
-                return ELUPrime;
-            if (function == Linear)
-                return LinearPrime;
-            /*if (function == Softmax)
-                return SoftmaxPrime;*/
-
-            throw new Exception("Could not find derivative of Activation Function");
-        }
-
-        #endregion
-
         #region Checks
 
         private static void Check(float[] f)
@@ -343,24 +268,6 @@ namespace AI
         #endregion
 
         #region Utils
-
-        //https://stackoverflow.com/questions/218060/random-gaussian-variables
-        private static float GaussianRandom()
-        {
-            double u1 = 1.0 - Rand.NextDouble(); //uniform(0,1] random doubles
-            double u2 = 1.0 - Rand.NextDouble();
-            double randStdNormal = Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Sin(2.0 * Math.PI * u2); //random normal(0,1)
-            return (float)randStdNormal;
-        }
-
-        private static float GaussianRandom(float mean, float standardDeviation)
-        {
-            double u1 = 1.0 - Rand.NextDouble(); //uniform(0,1] random
-            double u2 = 1.0 - Rand.NextDouble();
-            double randStdNormal = Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Sin(2.0 * Math.PI * u2); //random normal(0,1)
-            double randNormal = mean + standardDeviation * randStdNormal; //random normal(mean,stdDev^2)
-            return (float)randNormal;
-        }
 
         public void Save(string filePath)
         {
