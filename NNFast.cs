@@ -14,8 +14,11 @@ namespace AI
 
         public Action<float[], float[]>[] ActivationFunctions;
         public Action<float[], float[]>[] ActivationFunctionsDerivatives;
+        public Action<float[], float[], float[]> LossFunction;
 
-        public NNFast(int[] layers, ActivationTypes[] activationFunctionsTypes, float learningRate)
+        private float[][] error;
+
+        public NNFast(int[] layers, ActivationType[] activationFunctionsTypes, LossFunctionType lossFunction, float learningRate)
         {
             if (layers == null)
                 throw new Exception("Layers given are null");
@@ -54,6 +57,7 @@ namespace AI
                 }
             }
 
+            LossFunction = LossFunctions.GetLossFunction(lossFunction);
             ActivationFunctions = new Action<float[], float[]>[Layers.Length];
             ActivationFunctionsDerivatives = new Action<float[], float[]>[Layers.Length];
 
@@ -82,6 +86,79 @@ namespace AI
 
             Buffer.BlockCopy(Neurons[Layers.Length - 1], 0, output, 0, sizeof(float) * Layers[Layers.Length - 1]);
             return output;
+        }
+
+        public void TrainLoss(float[][] inputs, float[][] targets)
+        {
+            float[] loss = new float[Layers[Layers.Length - 1]];
+
+            for (int p = 0; p < inputs.Length; p++)
+            {
+                float[] input = inputs[p];
+                LossFunction(input, targets[p], loss);
+                ActivationFunctionsDerivatives[Layers.Length - 1](Z[Layers.Length - 1], error[Neurons.Length - 1]);
+
+                TensorPrimitives.Multiply(loss, error[Neurons.Length - 1], error[Neurons.Length - 1]);
+
+                for (int l = Layers.Length - 1; l >= 2; l--)
+                {
+                    error[l - 1] = new float[Neurons[l - 1].Length];
+                    for (int prevN = 0; prevN < Neurons[l - 1].Length; prevN++)
+                    {
+                        error[l - 1][prevN] = TensorPrimitives.Dot(Weights[l].AsSpan(Layers[l - 1] * prevN, Layers[l - 1]), error[l].AsSpan());
+                        /*for (int n = 0; n < Neurons[l].Length; n++)
+                            error[l - 1][prevN] += error[l][n] * Weights[l][n][prevN];
+
+                        error[l - 1][prevN] *= ActivationHiddenDer(Z[l - 1][prevN]);*/
+                    }
+                }
+
+
+                /*for (int l = 1; l < Layers.Length; l++)
+                {
+                    for (int n = 0; n < Neurons[l].Length; n++)
+                    {
+                        moveBiases[l][n] += error[l][n];
+
+                        for (int prevN = 0; prevN < Neurons[l - 1].Length; prevN++)
+                            moveWeights[l][n][prevN] += error[l][n] * Neurons[l - 1][prevN];
+                    }
+                }*/
+            }
+
+            /*for (int l = 1; l < Layers.Length; l++)
+            {
+                for (int n = 0; n < Neurons[l].Length; n++)
+                {
+                    moveBiases[l][n] /= inputs.Length;
+
+                    MovingAverageBiases[l][n] = Beta1 * MovingAverageBiases[l][n] + (1 - Beta1) * moveBiases[l][n];
+                    MovingSqrdAverageBiases[l][n] = Beta2 * MovingSqrdAverageBiases[l][n] + (1 - Beta2) * moveBiases[l][n] * moveBiases[l][n];
+                    float mHat = MovingAverageBiases[l][n] / (1f - (float)Math.Pow(Beta1, Timestep));
+                    float vHat = MovingSqrdAverageBiases[l][n] / (1f - (float)Math.Pow(Beta2, Timestep));
+
+                    Biases[l][n] += LearningRate * mHat / ((float)Math.Sqrt(vHat) + epsilon);
+
+                    for (int prevN = 0; prevN < Neurons[l - 1].Length; prevN++)
+                    {
+                        moveWeights[l][n][prevN] /= inputs.Length;
+
+                        MovingAverage[l][n][prevN] = Beta1 * MovingAverage[l][n][prevN] + (1 - Beta1) * moveWeights[l][n][prevN];
+                        MovingSqrdAverage[l][n][prevN] = Beta2 * MovingSqrdAverage[l][n][prevN] + (1 - Beta2) * moveWeights[l][n][prevN] * moveWeights[l][n][prevN];
+
+                        float mHatW = MovingAverage[l][n][prevN] / (1f - (float)Math.Pow(Beta1, Timestep));
+                        float vHatW = MovingSqrdAverage[l][n][prevN] / (1f - (float)Math.Pow(Beta2, Timestep));
+
+                        Weights[l][n][prevN] += LearningRate * mHatW / ((float)Math.Sqrt(vHatW) + epsilon);
+
+                        moveWeights[l][n][prevN] = 0;
+                    }
+
+                    moveBiases[l][n] = 0;
+                }
+            }
+
+            Timestep++;*/
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿namespace AI
 {
-    public enum ActivationTypes { ReLU, ELU, Linear, LeakyReLU, Sigmoid }
+    public enum ActivationType { ReLU, ELU, Linear, LeakyReLU, Sigmoid }
     public static class Activations
     {
         public static void ReLU(float[] x, float[] result)
@@ -63,38 +63,38 @@
             }
         }
 
-        public static Action<float[], float[]> GetActivationFunction(ActivationTypes activationType)
+        public static Action<float[], float[]> GetActivationFunction(ActivationType activationType)
         {
             switch (activationType)
             {
-                case ActivationTypes.Linear:
+                case ActivationType.Linear:
                     return Linear;
-                case ActivationTypes.ReLU:
+                case ActivationType.ReLU:
                     return ReLU;
-                case ActivationTypes.ELU:
+                case ActivationType.ELU:
                     return ELU;
-                case ActivationTypes.LeakyReLU:
+                case ActivationType.LeakyReLU:
                     return LeakyReLU;
-                case ActivationTypes.Sigmoid:
+                case ActivationType.Sigmoid:
                     return Sigmoid;
             }
 
             throw new Exception($"Activation function of type {activationType} is not yet implemented");
         }
 
-        public static Action<float[], float[]> GetActivationDerivative(ActivationTypes activationType)
+        public static Action<float[], float[]> GetActivationDerivative(ActivationType activationType)
         {
             switch (activationType)
             {
-                case ActivationTypes.Linear:
+                case ActivationType.Linear:
                     return LinearDerivative;
-                case ActivationTypes.ReLU:
+                case ActivationType.ReLU:
                     return ReLUDerivative;
-                case ActivationTypes.ELU:
+                case ActivationType.ELU:
                     return ELUDerivative;
-                case ActivationTypes.LeakyReLU:
+                case ActivationType.LeakyReLU:
                     return LeakyReLUDerivative;
-                case ActivationTypes.Sigmoid:
+                case ActivationType.Sigmoid:
                     return SigmoidDerivative;
             }
 

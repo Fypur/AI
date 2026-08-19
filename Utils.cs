@@ -2,9 +2,6 @@
 {
     public static class Utils
     {
-
-
-
         //https://stackoverflow.com/questions/218060/random-gaussian-variables
         public static float GaussianRandom()
         {
