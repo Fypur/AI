@@ -1,4 +1,6 @@
-﻿namespace AI
+﻿using System.Numerics.Tensors;
+
+namespace AI
 {
     public class TensorOppAdd : TensorOpp
     {
@@ -15,11 +17,8 @@
 
         public override void Backward()
         {
-            for (int i = 0; i < A.Grad.Length; i++)
-            {
-                A.Grad[i] += Result.Grad[i];
-                B.Grad[i] += Result.Grad[i];
-            }
+            TensorPrimitives.Add(A.Grad, Result.Grad, A.Grad);
+            TensorPrimitives.Add(B.Grad, Result.Grad, B.Grad);
 
             A.CreatedFrom.Backward();
             B.CreatedFrom.Backward();

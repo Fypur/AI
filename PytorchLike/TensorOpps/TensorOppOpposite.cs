@@ -1,4 +1,6 @@
-﻿namespace AI
+﻿using System.Numerics.Tensors;
+
+namespace AI
 {
     public class TensorOppOpposite : TensorOpp
     {
@@ -13,8 +15,7 @@
 
         public override void Backward()
         {
-            for (int i = 0; i < A.Grad.Length; i++)
-                A.Grad[i] -= Result.Grad[i];
+            TensorPrimitives.Subtract(A.Grad, Result.Grad, A.Grad);
 
             A.CreatedFrom.Backward();
         }

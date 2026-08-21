@@ -91,14 +91,16 @@ namespace AI
                 {
                     for (int c = 0; c < aCols; c++)
                     {
-                        float a_value = a.Data[aOffset + r * aCols + c];
-                        Span<float> tRow = new Span<float>(t.Data, tOffset + r * t.Strides[t.Strides.Length - 2], bCols);
-                        ReadOnlySpan<float> bRow = new ReadOnlySpan<float>(b.Data, bOffset + c * b.Strides[b.Strides.Length - 2], bCols);
+                        float aValue = a.Data[aOffset + r * aCols + c];
+                        Span<float> tRow = new Span<float>(t.Data, tOffset + r * bCols, bCols);
+                        ReadOnlySpan<float> bRow = new ReadOnlySpan<float>(b.Data, bOffset + c * bCols, bCols);
 
-                        TensorPrimitives.MultiplyAdd(bRow, a_value, tRow, tRow);
+                        TensorPrimitives.MultiplyAdd(bRow, aValue, tRow, tRow);
                     }
                 }
             }
+
+            t.CreatedFrom = new TensorOppMatrixMult(a, b, t, numMatrixMult);
 
             return t;
         }

@@ -1,4 +1,6 @@
-﻿namespace AI
+﻿using System.Numerics.Tensors;
+
+namespace AI
 {
     public class TensorOppMult : TensorOpp
     {
@@ -25,19 +27,15 @@
         {
             if (B != null)
             {
-                for (int i = 0; i < A.Grad.Length; i++)
-                {
-                    A.Grad[i] += B.Data[i] * Result.Grad[i];
-                    B.Grad[i] += A.Data[i] * Result.Grad[i];
-                }
+                TensorPrimitives.MultiplyAdd(Result.Grad, B.Data, A.Grad, A.Grad);
+                TensorPrimitives.MultiplyAdd(Result.Grad, A.Data, B.Grad, B.Grad);
 
                 A.CreatedFrom.Backward();
                 B.CreatedFrom.Backward();
             }
             else
             {
-                for (int i = 0; i < A.Grad.Length; i++)
-                    A.Grad[i] += Bf * Result.Grad[i];
+                TensorPrimitives.MultiplyAdd(Result.Grad, Bf, A.Grad, A.Grad);
             }
         }
     }
